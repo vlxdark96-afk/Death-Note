@@ -1,219 +1,602 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="monetag" content="73efafb21b5c79dc1bcdaadb0a8914d8">
-    <title>DATE NOTE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            background-color: #000000;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            font-family: 'Cinzel', serif;
-        }
+    <title>DATE NOTE</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
-        /* ৩ সেকেন্ডের স্প্ল্যাশ স্ক্রিন (Cover.png দেখাবে) */
-        #splashScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            transition: opacity 0.8s ease;
-        }
+<style>
+    * {
+        box-sizing: border-box;
+    }
 
-        #splashScreen img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* পুরো স্ক্রিন জুড়ে ছবিটি দেখানোর জন্য */
-        }
+    body {
+        background-color: #000000;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        font-family: 'Cinzel', serif;
+    }
 
-        /* মূল লেখার পেজ */
-        #mainApp {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            background-color: #0b0b0b;
-            padding: 10px;
-            box-sizing: border-box;
-        }
+    /* =========================
+       SPLASH SCREEN
+    ========================= */
+
+    #splashScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #000000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        transition: opacity 0.8s ease;
+    }
+
+    #splashScreen img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* =========================
+       MAIN APP
+    ========================= */
+
+    #mainApp {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        height: 100%;
+        background-color: #0b0b0b;
+        padding: 10px;
+        overflow: hidden;
+    }
+
+    .header-title {
+        color: #fff;
+        font-size: 1.5rem;
+        margin: 10px 0;
+        letter-spacing: 2px;
+        text-align: center;
+    }
+
+    /* =========================
+       NOTEBOOK
+    ========================= */
+
+    .notebook-page {
+        background-color: #111111;
+        border: 2px solid #222;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+        position: relative;
+        cursor: crosshair;
+        touch-action: none;
+        max-width: 100%;
+    }
+
+    canvas {
+        display: block;
+        background: #141414;
+        touch-action: none;
+    }
+
+    /* =========================
+       CONTROLS
+    ========================= */
+
+    .controls {
+        margin-top: 15px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    button {
+        background: #1a1a1a;
+        color: #fff;
+        border: 1px solid #444;
+        padding: 10px 20px;
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: 0.2s;
+        border-radius: 3px;
+    }
+
+    button:hover {
+        background: #333;
+        border-color: #777;
+    }
+
+    button:active {
+        transform: scale(0.96);
+    }
+
+    /* =========================
+       SAVE MESSAGE
+    ========================= */
+
+    #saveMessage {
+        position: fixed;
+        left: 50%;
+        bottom: 25px;
+        transform: translateX(-50%);
+        background: #111;
+        color: white;
+        border: 1px solid #444;
+        padding: 10px 18px;
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 2000;
+    }
+
+    #saveMessage.show {
+        opacity: 1;
+    }
+
+    /* =========================
+       MOBILE
+    ========================= */
+
+    @media (max-width: 500px) {
 
         .header-title {
-            color: #fff;
-            font-size: 1.5rem;
-            margin: 10px 0;
-            letter-spacing: 2px;
+            font-size: 1.25rem;
+            margin: 8px 0;
         }
 
-        /* অ্যানিমে স্টাইল খাতার ক্যানভাস */
-        .notebook-page {
-            background-color: #111111;
-            border: 2px solid #222;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
-            position: relative;
-            cursor: crosshair;
-            touch-action: none;
-        }
-
-        canvas {
-            display: block;
-            background: #141414;
-        }
-
-        /* কন্ট্রোল বাটন */
         .controls {
-            margin-top: 15px;
-            display: flex;
-            gap: 15px;
+            gap: 8px;
+            margin-top: 10px;
         }
 
         button {
-            background: #1a1a1a;
-            color: #fff;
-            border: 1px solid #444;
-            padding: 10px 20px;
-            font-family: 'Cinzel', serif;
-            font-size: 1rem;
-            cursor: pointer;
-            letter-spacing: 1px;
-            transition: 0.2s;
+            padding: 9px 12px;
+            font-size: 0.85rem;
         }
+    }
+</style>
 
-        button:hover {
-            background: #333;
-            border-color: #777;
-        }
-    </style>
-</head>
-<body>
+</head><body><!-- =========================
+     SPLASH
+========================= -->
 
-    <!-- Cover.png ইমেজ সহ স্প্ল্যাশ স্ক্রিন -->
-    <div id="splashScreen">
-        <img src="Cover.png" alt="Date Note Splash">
+<div id="splashScreen">
+    <img src="Cover.png" alt="Date Note Splash">
+</div>
+
+<!-- =========================
+     MAIN APP
+========================= -->
+
+<div id="mainApp">
+
+    <div class="header-title">
+        DATE NOTE
     </div>
 
-    <!-- মূল লেখার পেজ -->
-    <div id="mainApp">
-        <div class="header-title">DATE NOTE</div>
-        
-        <div class="notebook-page">
-            <canvas id="noteCanvas"></canvas>
-        </div>
-
-        <div class="controls">
-            <button onclick="clearCanvas()">CLEAR PAGE</button>
-            <button onclick="saveCanvas()">SAVE NOTE</button>
-        </div>
+    <div class="notebook-page">
+        <canvas id="noteCanvas"></canvas>
     </div>
 
-    <script>
-        // ৩ সেকেন্ড পর স্প্ল্যাশ স্ক্রিন ফেড-আউট হয়ে মেইন নোট পেজ ওপেন হবে
+    <div class="controls">
+
+        <button onclick="clearCanvas()">
+            CLEAR PAGE
+        </button>
+
+        <button onclick="saveCanvas()">
+            SAVE NOTE
+        </button>
+
+    </div>
+
+</div>
+
+<!-- Save notification -->
+
+<div id="saveMessage">
+    NOTE SAVED
+</div>
+
+
+<script>
+
+    /* =====================================================
+       CONFIGURATION
+    ===================================================== */
+
+    const OPEN_URL = "https://omg10.com/4/11760715";
+
+    // Save করার কত মিলিসেকেন্ড পরে URL খুলবে
+    const OPEN_DELAY = 2000;
+
+
+    /* =====================================================
+       SPLASH SCREEN
+    ===================================================== */
+
+    setTimeout(() => {
+
+        const splash = document.getElementById("splashScreen");
+
+        splash.style.opacity = "0";
+
         setTimeout(() => {
-            const splash = document.getElementById("splashScreen");
-            splash.style.opacity = "0";
-            setTimeout(() => {
-                splash.style.display = "none";
-                document.getElementById("mainApp").style.display = "flex";
-                initCanvas();
-            }, 800);
-        }, 3000);
 
-        let canvas, ctx;
-        let isDrawing = false;
+            splash.style.display = "none";
 
-        function initCanvas() {
-            canvas = document.getElementById("noteCanvas");
-            ctx = canvas.getContext("2d");
+            document.getElementById("mainApp").style.display = "flex";
 
-            let screenWidth = window.innerWidth > 500 ? 450 : window.innerWidth - 40;
-            let screenHeight = window.innerHeight > 700 ? 500 : window.innerHeight - 150;
+            initCanvas();
 
-            canvas.width = screenWidth;
-            canvas.height = screenHeight;
+        }, 800);
 
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 3;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
+    }, 3000);
 
-            canvas.addEventListener("mousedown", startDrawing);
-            canvas.addEventListener("mousemove", draw);
-            canvas.addEventListener("mouseup", stopDrawing);
-            canvas.addEventListener("mouseleave", stopDrawing);
 
-            canvas.addEventListener("touchstart", handleTouch);
-            canvas.addEventListener("touchmove", handleTouch);
-            canvas.addEventListener("touchend", stopDrawing);
+    /* =====================================================
+       CANVAS VARIABLES
+    ===================================================== */
+
+    let canvas;
+    let ctx;
+
+    let isDrawing = false;
+
+
+    /* =====================================================
+       INITIALIZE CANVAS
+    ===================================================== */
+
+    function initCanvas() {
+
+        canvas = document.getElementById("noteCanvas");
+
+        ctx = canvas.getContext("2d");
+
+        let screenWidth =
+            window.innerWidth > 500
+                ? 450
+                : window.innerWidth - 40;
+
+        let screenHeight =
+            window.innerHeight > 700
+                ? 500
+                : window.innerHeight - 150;
+
+
+        canvas.width = screenWidth;
+        canvas.height = screenHeight;
+
+
+        /* Pen settings */
+
+        ctx.strokeStyle = "#ffffff";
+
+        ctx.lineWidth = 3;
+
+        ctx.lineCap = "round";
+
+        ctx.lineJoin = "round";
+
+
+        /* Mouse */
+
+        canvas.addEventListener(
+            "mousedown",
+            startDrawing
+        );
+
+        canvas.addEventListener(
+            "mousemove",
+            draw
+        );
+
+        canvas.addEventListener(
+            "mouseup",
+            stopDrawing
+        );
+
+        canvas.addEventListener(
+            "mouseleave",
+            stopDrawing
+        );
+
+
+        /* Touch */
+
+        canvas.addEventListener(
+            "touchstart",
+            handleTouch,
+            { passive: false }
+        );
+
+        canvas.addEventListener(
+            "touchmove",
+            handleTouch,
+            { passive: false }
+        );
+
+        canvas.addEventListener(
+            "touchend",
+            stopDrawing,
+            { passive: false }
+        );
+
+    }
+
+
+    /* =====================================================
+       GET DRAWING POSITION
+    ===================================================== */
+
+    function getPosition(e) {
+
+        const rect =
+            canvas.getBoundingClientRect();
+
+
+        if (e.touches && e.touches.length > 0) {
+
+            return {
+
+                x:
+                    e.touches[0].clientX
+                    - rect.left,
+
+                y:
+                    e.touches[0].clientY
+                    - rect.top
+
+            };
+
         }
 
-        function getPosition(e) {
-            let rect = canvas.getBoundingClientRect();
-            if (e.touches) {
-                return {
-                    x: e.touches[0].clientX - rect.left,
-                    y: e.touches[0].clientY - rect.top
-                };
-            } else {
-                return {
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
-                };
-            }
+
+        return {
+
+            x:
+                e.clientX
+                - rect.left,
+
+            y:
+                e.clientY
+                - rect.top
+
+        };
+
+    }
+
+
+    /* =====================================================
+       START DRAWING
+    ===================================================== */
+
+    function startDrawing(e) {
+
+        isDrawing = true;
+
+        const pos = getPosition(e);
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            pos.x,
+            pos.y
+        );
+
+        e.preventDefault();
+
+    }
+
+
+    /* =====================================================
+       DRAW
+    ===================================================== */
+
+    function draw(e) {
+
+        if (!isDrawing) return;
+
+        const pos = getPosition(e);
+
+        ctx.lineTo(
+            pos.x,
+            pos.y
+        );
+
+        ctx.stroke();
+
+        e.preventDefault();
+
+    }
+
+
+    /* =====================================================
+       TOUCH
+    ===================================================== */
+
+    function handleTouch(e) {
+
+        if (e.type === "touchstart") {
+
+            startDrawing(e);
+
         }
 
-        function startDrawing(e) {
-            isDrawing = true;
-            let pos = getPosition(e);
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-            e.preventDefault();
+        else if (e.type === "touchmove") {
+
+            draw(e);
+
         }
 
-        function draw(e) {
-            if (!isDrawing) return;
-            let pos = getPosition(e);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
-            e.preventDefault();
+    }
+
+
+    /* =====================================================
+       STOP DRAWING
+    ===================================================== */
+
+    function stopDrawing() {
+
+        isDrawing = false;
+
+    }
+
+
+    /* =====================================================
+       CLEAR CANVAS
+    ===================================================== */
+
+    function clearCanvas() {
+
+        if (!ctx) return;
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+    }
+
+
+    /* =====================================================
+       SAVE NOTE
+       
+       1. PNG তৈরি হবে
+       2. Download trigger হবে
+       3. 2 seconds পরে URL open হবে
+    ===================================================== */
+
+    function saveCanvas() {
+
+        if (!canvas) return;
+
+
+        /* ---------------------------------
+           STEP 1: Canvas → PNG
+        --------------------------------- */
+
+        const imageData =
+            canvas.toDataURL("image/png");
+
+
+        /* ---------------------------------
+           STEP 2: Download / Save
+        --------------------------------- */
+
+        const link =
+            document.createElement("a");
+
+        link.download =
+            "date-note.png";
+
+        link.href =
+            imageData;
+
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+
+        /* ---------------------------------
+           STEP 3: Show message
+        --------------------------------- */
+
+        showSaveMessage();
+
+
+        /* ---------------------------------
+           STEP 4: Wait 2 seconds
+        --------------------------------- */
+
+        setTimeout(() => {
+
+            openAfterSave();
+
+        }, OPEN_DELAY);
+
+    }
+
+
+    /* =====================================================
+       SAVE MESSAGE
+    ===================================================== */
+
+    function showSaveMessage() {
+
+        const message =
+            document.getElementById("saveMessage");
+
+        message.classList.add("show");
+
+
+        setTimeout(() => {
+
+            message.classList.remove("show");
+
+        }, 1500);
+
+    }
+
+
+    /* =====================================================
+       OPEN URL AFTER 2 SECONDS
+    ===================================================== */
+
+    function openAfterSave() {
+
+        /*
+         * প্রথমে নতুন tab/window open করার চেষ্টা।
+         */
+
+        const newWindow =
+            window.open(
+                OPEN_URL,
+                "_blank"
+            );
+
+
+        /*
+         * কিছু WebView / browser popup block করলে
+         * একই window-তে URL open করার fallback।
+         */
+
+        if (
+            !newWindow ||
+            newWindow.closed ||
+            typeof newWindow.closed === "undefined"
+        ) {
+
+            window.location.href =
+                OPEN_URL;
+
         }
 
-        function handleTouch(e) {
-            if (e.type === "touchstart") {
-                startDrawing(e);
-            } else if (e.type === "touchmove") {
-                draw(e);
-            }
-        }
+    }
 
-        function stopDrawing() {
-            isDrawing = false;
-        }
-
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function saveCanvas() {
-            let link = document.createElement('a');
-            link.download = 'date-note.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-    </script>
+</script>
 
 </body>
 </html>
