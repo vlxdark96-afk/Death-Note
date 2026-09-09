@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DATE NOTE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000000;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Cinzel', serif;
+            -webkit-user-select: none;
+        }
+
+        /* ৩ সেকেন্ডের স্প্ল্যাশ স্ক্রিন (Cover.png দেখাবে) */
+        #splashScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.8s ease;
+        }
+
+        #splashScreen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* পুরো স্ক্রিন জুড়ে ছবিটি দেখানোর জন্য */
+        }
+
+        /* মূল লেখার পেজ */
+        #mainApp {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            background-color: #0b0b0b;
+            padding: 10px;
+            box-sizing: border-box;
+            justify-content: center;
+        }
+
+        .header-title {
+            color: #fff;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        /* অ্যানিমে স্টাইল খাতার ক্যানভাস (মোবাইল স্ক্রিন ফ্রেন্ডলি) */
+        .notebook-page {
+            background-color: #111111;
+            border: 2px solid #222;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+            position: relative;
+            cursor: crosshair;
+            touch-action: none; /* মোবাইল স্ক্রিনে ড্র করার সময় যাতে পেজ স্ক্রোল না হয় */
+        }
+
+        canvas {
+            display: block;
+            background: #141414;
+        }
+
+        /* কন্ট্রোল বাটন */
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px 20px;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            border-radius: 4px;
+        }
+
+        button:active {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cover.png ইমেজ সহ স্প্ল্যাশ স্ক্রিন -->
+    <div id="splashScreen">
+        <img src="Cover.png" alt="Date Note Splash">
+    </div>
+
+    <!-- মূল লেখার পেজ -->
+    <div id="mainApp">
+        <div class="header-title">DATE NOTE</div>
+        
+        <div class="notebook-page">
+            <canvas id="noteCanvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <button onclick="clearCanvas()">CLEAR</button>
+            <button onclick="saveCanvas()">SAVE</button>
+        </div>
+    </div>
+
+    <script>
+        // ৩ সেকেন্ড পর স্প্ল্যাশ স্ক্রিন ফেড-আউট হয়ে মেইন নোট পেজ ওপেন হবে
+        setTimeout(() => {
+            const splash = document.getElementById("splashScreen");
+            splash.style.opacity = "0";
+            setTimeout(() => {
+                splash.style.display = "none";
+                document.getElementById("mainApp").style.display = "flex";
+                initCanvas();
+            }, 800);
+        }, 3000);
+
+        let canvas, ctx;
+        let isDrawing = false;
+
+        function initCanvas() {
+            canvas = document.getElementById("noteCanvas");
+            ctx = canvas.getContext("2d");
+
+            // মোবাইল স্ক্রিনের মাপে ক্যানভাস সেট করা যাতে আঙul দিয়ে নিখুঁত লেখা যায়
+            let screenWidth = window.innerWidth - 30;
+            let screenHeight = window.innerHeight - 140;
+
+            canvas.width = screenWidth > 500 ? 450 : screenWidth;
+            canvas.height = screenHeight > 600 ? 500 : screenHeight;
+
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            // মাউস এবং টাচ ইভেন্ট (মোবাইলে আঙুল দিয়ে লেখার জন্য)
+            canvas.addEventListener("mousedown", startDrawing);
+            canvas.addEventListener("mousemove", draw);
+            canvas.addEventListener("mouseup", stopDrawing);
+            canvas.addEventListener("mouseleave", stopDrawing);
+
+            canvas.addEventListener("touchstart", handleTouch, { passive: false });
+            canvas.addEventListener("touchmove", handleTouch, { passive: false });
+            canvas.addEventListener("touchend", stopDrawing);
+        }
+
+        function getPosition(e) {
+            let rect = canvas.getBoundingClientRect();
+            if (e.touches && e.touches.length > 0) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            } else {
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            let pos = getPosition(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            if (e.cancelable) e.preventDefault();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            let pos = getPosition(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            if (e.cancelable) e.preventDefault();
+        }
+
+        function handleTouch(e) {
+            if (e.type === "touchstart") {
+                startDrawing(e);
+            } else if (e.type === "touchmove") {
+                draw(e);
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function saveCanvas() {
+            let dataURL = canvas.toDataURL("image/png");
+            // অ্যান্ড্রয়েড অ্যাপের ভেতরে ডেটা পাঠানোর জন্য বা সেভ করার জন্য
+            if(window.Android && window.Android.saveImage) {
+                window.Android.saveImage(dataURL);
+            } else {
+                let link = document.createElement('a');
+                link.download = 'date-note.png';
+                link.href = dataURL;
+                link.click();
+            }
+        }
+    </script>
+
+</body>
+</html>
