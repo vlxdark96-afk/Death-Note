@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DATE NOTE</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
     <style>
@@ -16,7 +16,6 @@
             align-items: center;
             overflow: hidden;
             font-family: 'Cinzel', serif;
-            -webkit-user-select: none;
         }
 
         /* ৩ সেকেন্ডের স্প্ল্যাশ স্ক্রিন (Cover.png দেখাবে) */
@@ -50,24 +49,23 @@
             background-color: #0b0b0b;
             padding: 10px;
             box-sizing: border-box;
-            justify-content: center;
         }
 
         .header-title {
             color: #fff;
             font-size: 1.5rem;
-            margin-bottom: 10px;
+            margin: 10px 0;
             letter-spacing: 2px;
         }
 
-        /* অ্যানিমে স্টাইল খাতার ক্যানভাস (মোবাইল স্ক্রিন ফ্রেন্ডলি) */
+        /* অ্যানিমে স্টাইল খাতার ক্যানভাস */
         .notebook-page {
             background-color: #111111;
             border: 2px solid #222;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
             position: relative;
             cursor: crosshair;
-            touch-action: none; /* মোবাইল স্ক্রিনে ড্র করার সময় যাতে পেজ স্ক্রোল না হয় */
+            touch-action: none;
         }
 
         canvas {
@@ -91,11 +89,12 @@
             font-size: 1rem;
             cursor: pointer;
             letter-spacing: 1px;
-            border-radius: 4px;
+            transition: 0.2s;
         }
 
-        button:active {
+        button:hover {
             background: #333;
+            border-color: #777;
         }
     </style>
 </head>
@@ -115,8 +114,8 @@
         </div>
 
         <div class="controls">
-            <button onclick="clearCanvas()">CLEAR</button>
-            <button onclick="saveCanvas()">SAVE</button>
+            <button onclick="clearCanvas()">CLEAR PAGE</button>
+            <button onclick="saveCanvas()">SAVE NOTE</button>
         </div>
     </div>
 
@@ -139,32 +138,30 @@
             canvas = document.getElementById("noteCanvas");
             ctx = canvas.getContext("2d");
 
-            // মোবাইল স্ক্রিনের মাপে ক্যানভাস সেট করা যাতে আঙul দিয়ে নিখুঁত লেখা যায়
-            let screenWidth = window.innerWidth - 30;
-            let screenHeight = window.innerHeight - 140;
+            let screenWidth = window.innerWidth > 500 ? 450 : window.innerWidth - 40;
+            let screenHeight = window.innerHeight > 700 ? 500 : window.innerHeight - 150;
 
-            canvas.width = screenWidth > 500 ? 450 : screenWidth;
-            canvas.height = screenHeight > 600 ? 500 : screenHeight;
+            canvas.width = screenWidth;
+            canvas.height = screenHeight;
 
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 3;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
 
-            // মাউস এবং টাচ ইভেন্ট (মোবাইলে আঙুল দিয়ে লেখার জন্য)
             canvas.addEventListener("mousedown", startDrawing);
             canvas.addEventListener("mousemove", draw);
             canvas.addEventListener("mouseup", stopDrawing);
             canvas.addEventListener("mouseleave", stopDrawing);
 
-            canvas.addEventListener("touchstart", handleTouch, { passive: false });
-            canvas.addEventListener("touchmove", handleTouch, { passive: false });
+            canvas.addEventListener("touchstart", handleTouch);
+            canvas.addEventListener("touchmove", handleTouch);
             canvas.addEventListener("touchend", stopDrawing);
         }
 
         function getPosition(e) {
             let rect = canvas.getBoundingClientRect();
-            if (e.touches && e.touches.length > 0) {
+            if (e.touches) {
                 return {
                     x: e.touches[0].clientX - rect.left,
                     y: e.touches[0].clientY - rect.top
@@ -182,7 +179,7 @@
             let pos = getPosition(e);
             ctx.beginPath();
             ctx.moveTo(pos.x, pos.y);
-            if (e.cancelable) e.preventDefault();
+            e.preventDefault();
         }
 
         function draw(e) {
@@ -190,7 +187,7 @@
             let pos = getPosition(e);
             ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
-            if (e.cancelable) e.preventDefault();
+            e.preventDefault();
         }
 
         function handleTouch(e) {
@@ -210,16 +207,10 @@
         }
 
         function saveCanvas() {
-            let dataURL = canvas.toDataURL("image/png");
-            // অ্যান্ড্রয়েড অ্যাপের ভেতরে ডেটা পাঠানোর জন্য বা সেভ করার জন্য
-            if(window.Android && window.Android.saveImage) {
-                window.Android.saveImage(dataURL);
-            } else {
-                let link = document.createElement('a');
-                link.download = 'date-note.png';
-                link.href = dataURL;
-                link.click();
-            }
+            let link = document.createElement('a');
+            link.download = 'date-note.png';
+            link.href = canvas.toDataURL();
+            link.click();
         }
     </script>
 
